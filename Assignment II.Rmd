@@ -1,0 +1,270 @@
+---
+title: "Assignment II ICT515"
+output: html_notebook
+---
+```{r}
+rm(list = ls())
+# load necessary libraries
+library(ggplot2)
+
+```
+
+```{r}
+
+# read data 
+df.energy <- read.csv('energydata_complete.csv')
+head(df.energy)
+names(df.energy)
+```
+
+```{r}
+# check for datatypes of the variables 
+str(df.energy)
+```
+
+```{r}
+# check for missing values 
+colSums(is.na(df.energy))
+str(df.energy$T6)
+```
+```{r}
+# add month columns to aggregate date into year and month format 
+df.energy <- df.energy %>%
+  mutate(Daily = format(as.Date(date), '%Y-%m-%d'))
+
+df.energy <- df.energy %>%
+  mutate(Daily = as.Date(paste0(Daily)))
+str(df.energy)
+```
+
+```{r}
+# create time series plot on monthly basis
+ggplot(df.energy, aes(x = Daily, y = Appliances)) + geom_line() +
+  labs(title = "Time Series Plot (Monthly)",
+       x = "Month",
+       y = "Appliance") +
+  scale_x_date(date_labels = "%Y-%m-%d", date_breaks = "1 month") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+df.jan <- df.energy %>% filter(format(Daily, '%Y-%m') == '2016-01')
+df.jan
+```
+
+```{r}
+# create time series plot on monthly basis
+ggplot(df.jan, aes(x = Daily, y = Appliances)) + geom_line() +
+  labs(title = "Time Series Plot (Weekly)",
+       x = "Weekly",
+       y = "Appliance (Wh)")+
+  theme_minimal(base_size = 14) +                                
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),       
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12, face = "italic"), 
+        axis.title.x = element_text(margin = margin(t = 10)),    
+        axis.title.y = element_text(margin = margin(r = 10))) +  
+  geom_smooth(method = "loess", se = FALSE, color = "#3498DB", linewidth = 1)
+```
+```{r}
+str(df.energy)
+df.energy <- df.energy %>% select(-date, -Daily)
+```
+```{r}
+summary(df.energy)
+```
+```{r}
+summary(df.energy$lights)
+df.energy.scale <- scale(df.energy)
+summary(df.energy.scale)
+```
+
+
+
+```{r}
+# split the dataset into training and test 
+sample <- sample(c(T, F), nrow(df.energy), replace = T, prob = c(0.7, 0.3))
+
+train.energy <- df.energy[sample,]
+# check dimension of training dataset 
+dim(train.energy)
+
+test.enegry <- df.energy[!sample,]
+# check dimension of tesdatasets
+dim(test.enegry)
+
+```
+
+
+```{r}
+# Custom function to display correlations in the upper panel
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor , ...) {
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- abs(cor(x, y))  # Calculate correlation
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste0(prefix, txt)
+  if(missing(cex.cor)) cex.cor <- 1
+  text(0.5, 0.5, txt, cex = cex.cor, adj = c(0.5, 0.5) ) 
+}
+
+# Custom function to plot scatter plots in the lower panel
+panel.scatter <- function(x, y, ...) {
+  points(x, y, ...)
+}
+
+# Custom function to plot histograms in the diagonal
+panel.hist <- function(x, ...) {
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(usr[1:2], 0, 1.5))  # Adjust plot space
+  h <- hist(x, plot = FALSE)  # Generate histogram
+  breaks <- h$breaks; nB <- length(breaks)
+  y <- h$counts; y <- y / max(y)  # Scale the counts
+  rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)  # Plot histogram
+}
+```
+
+
+```{r}
+# Produce pairwise scatterplots to investigate possible appropriate transformations.
+pairs(Appliances ~ lights + T1 + RH_1 + T2 + RH_2, data = train.energy,
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+
+```
+```{r}
+pairs(log(Appliances) ~ lights + log(T1) + RH_1 + log(T2) + RH_2, data = train.energy,
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+
+```
+
+```{r}
+# Produce pairwise scatterplots to investigate possible appropriate transformations.
+pairs(Appliances ~ T3 + RH_3 + T4 + RH_4 + T5 + RH_5, data = train.energy, 
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+
+```
+```{r}
+# Produce pairwise scatterplots to investigate possible appropriate transformations.
+pairs(log(Appliances) ~ log(T3) + RH_3 + log(T4) + RH_4 + log(T5) + RH_5, data = train.energy, 
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+
+```
+
+```{r}
+# Generate the pair plot with customized panels
+pairs(Appliances ~ T6 + RH_6 + T7 + RH_7 + T8 + RH_8, data = train.energy,
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+
+```
+```{r}
+# Generate the pair plot with customized panels
+pairs(log(Appliances) ~ T6 + log(RH_6) + log(T7) + RH_7 + log(T8) + log(RH_8), data = train.energy,
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+```
+
+
+
+```{r}
+# Produce pairwise scatterplots to investigate possible appropriate transformations.
+pairs(Appliances ~ T9 + RH_9 + T_out + Press_mm_hg + RH_out + Windspeed + Visibility + Tdewpoint, 
+      data =train.energy,
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+
+```
+```{r}
+# Produce pairwise scatterplots to investigate possible appropriate transformations.
+pairs(log(Appliances) ~ log(T9) + log(RH_9) + T_out + log(Press_mm_hg) + log(RH_out) + Windspeed + log(Visibility) + Tdewpoint, 
+      data =train.energy,
+      upper.panel = panel.cor,   # Correlation in upper panel
+      lower.panel = panel.scatter,  # Scatter plot in lower panel
+      diag.panel = panel.hist)  # Histogram in diagonal
+
+```
+
+
+```{r}
+# List of variables to apply log transformation
+log_vars <- c("Appliances", "T1", "T2", "T3", "T4", "T5", "RH_6" ,"T7", "T8", "RH_8", 
+              "T9", "RH_9", "Press_mm_hg", "RH_out", "Visibility")  # Replace with your actual variable names
+# Apply log transformation only to specified variables
+train.energy.log <- train.energy
+train.energy.log[log_vars] <- lapply(train.energy.log[log_vars], log)
+# Calculate correlation for all explanatory variables with response variable 'Appliances'
+correlations <- sapply(train.energy[, -which(names(train.energy) == "Appliances")], 
+                       function(x) cor(x, train.energy$Appliances, use = "complete.obs"))
+
+# Convert the result to a data frame
+cor_df <- data.frame(variable = names(correlations), correlation = correlations)
+
+# Sort by absolute correlation values
+cor_df <- cor_df[order(abs(cor_df$correlation), decreasing = TRUE), ]
+
+# Filter based on a threshold (e.g., |correlation| >= 0.5)
+strong_correlations <- cor_df[abs(cor_df$correlation) >= 0.05, ]
+
+# View the strongest correlations
+strong_correlations
+```
+create model without log transofrmation and with log transformation to cross the assumptions 
+
+
+```{r}
+# model without log transformation 
+energy.model.1 <- lm(Appliances ~ lights + RH_out + T2 + T6 + T_out + RH_8 + RH_1 + RH_1 + T3 + Windspeed + Windspeed + RH_6 + RH_2 + T1 + RH_7 + RH_9, data = train.energy)
+summary(energy.model.1)
+```
+
+
+```{r}
+# plot Q-Q plot 
+qqnorm(energy.model.1$residuals, main = 'Q-Q Plot of Residual')
+qqline(energy.model.1$residuals)
+
+```
+
+
+```{r}
+# plot scatter plot for model 
+plot(energy.model.1$fitted.values, energy.model.1$residuals, xlab = 'Fitted values', ylab = 'Residual',
+     main = 'Scatter plot of\nResidual vs Fitted Values')
+abline(h=0)
+```
+
+```{r}
+# model with log transformation 
+energy.model.2 <- lm(Appliances ~ lights + RH_out + T2 + T6 + T_out + RH_8 + RH_1 + RH_1 + T3 + Windspeed + Windspeed + RH_6 + RH_2 + T1 + RH_7 + RH_9, data = train.energy.log)
+summary(energy.model.2)
+
+```
+
+
+```{r}
+# plot Q-Q plot 
+qqnorm(energy.model.2$residuals, main = 'Q-Q Plot of Residual')
+qqline(energy.model.2$residuals)
+
+```
+
+```{r}
+# plot scatter plot for model 
+plot(energy.model.2$fitted.values, energy.model.1$residuals, xlab = 'Fitted values', ylab = 'Residual',
+     main = 'Scatter plot of\nResidual vs Fitted Values')
+abline(h=0)
+```
+use regsubsets()find the subset of predictor variables that produces the best regression model.
+```{r}
+best.subset <- regsubsets(Appliances ~ lights + RH_out + T2 + T6 + RH_8 + T_out + RH_6 + Windspeed + T3 + RH_1 + RH_2 + RH_7 + RH_9 + T1, data = train.energy.log)
+
