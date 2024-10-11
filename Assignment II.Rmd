@@ -6,6 +6,7 @@ output: html_notebook
 rm(list = ls())
 # load necessary libraries
 library(ggplot2)
+library(leaps)
 
 ```
 
@@ -67,15 +68,10 @@ ggplot(df.jan, aes(x = Daily, y = Appliances)) + geom_line() +
 ```
 ```{r}
 str(df.energy)
-df.energy <- df.energy %>% select(-date, -Daily)
+df.energy <- df.energy %>% select(-date)
 ```
 ```{r}
 summary(df.energy)
-```
-```{r}
-summary(df.energy$lights)
-df.energy.scale <- scale(df.energy)
-summary(df.energy.scale)
 ```
 
 
@@ -223,7 +219,7 @@ create model without log transofrmation and with log transformation to cross the
 
 ```{r}
 # model without log transformation 
-energy.model.1 <- lm(Appliances ~ lights + RH_out + T2 + T6 + T_out + RH_8 + RH_1 + RH_1 + T3 + Windspeed + Windspeed + RH_6 + RH_2 + T1 + RH_7 + RH_9, data = train.energy)
+energy.model.1 <- lm(Appliances ~ lights + RH_out + T2 + T6 + T_out + RH_8 + Windspeed + T3 + RH_6 + RH_1 + RH_2 + T1 + RH_7 + RH_9, data = train.energy)
 summary(energy.model.1)
 ```
 
@@ -245,7 +241,7 @@ abline(h=0)
 
 ```{r}
 # model with log transformation 
-energy.model.2 <- lm(Appliances ~ lights + RH_out + T2 + T6 + T_out + RH_8 + RH_1 + RH_1 + T3 + Windspeed + Windspeed + RH_6 + RH_2 + T1 + RH_7 + RH_9, data = train.energy.log)
+energy.model.2 <- lm(Appliances ~ lights + RH_out + T2 + T6 + T_out + RH_8 + Windspeed + T3 + RH_6 + RH_1 + RH_2 + T1 + RH_7 + RH_9, data = train.energy.log)
 summary(energy.model.2)
 
 ```
@@ -266,5 +262,29 @@ abline(h=0)
 ```
 use regsubsets()find the subset of predictor variables that produces the best regression model.
 ```{r}
-best.subset <- regsubsets(Appliances ~ lights + RH_out + T2 + T6 + RH_8 + T_out + RH_6 + Windspeed + T3 + RH_1 + RH_2 + RH_7 + RH_9 + T1, data = train.energy.log)
+best.subset <- regsubsets(Appliances ~ lights + RH_out + T2 + T6 + T_out + RH_8 + Windspeed + T3 + RH_6 + RH_1 + RH_2 + T1 + RH_7 + RH_9, data = train.energy.log)
 
+```
+
+```{r}
+summary(best.subset)
+```
+```{r}
+summary(best.subset)$adjr2
+```
+```{r}
+energy.model.3 <- lm(Appliances ~ lights + T2 + RH_8 + Windspeed + T3 + RH_1 + RH_2 + RH_9, data = train.energy.log)
+summary(energy.model.3)
+```
+```{r}
+# plot Q-Q plot 
+qqnorm(energy.model.3$residuals, main = 'Q-Q Plot of Residual')
+qqline(energy.model.2$residuals)
+```
+
+```{r}
+# plot scatter plot for model 
+plot(energy.model.2$fitted.values, energy.model.1$residuals, xlab = 'Fitted values', ylab = 'Residual',
+     main = 'Scatter plot of\nResidual vs Fitted Values')
+abline(h=0)
+```
